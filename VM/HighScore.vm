@@ -1,0 +1,126 @@
+function HighScore.init 0
+push constant 0
+pop static 0
+push constant 0
+return
+function HighScore.new 0
+push constant 1
+call Memory.alloc 1
+pop pointer 0
+push constant 0
+pop this 0
+push pointer 0
+return
+function HighScore.getHighScore 0
+push static 0
+return
+function HighScore.getCurrentScore 0
+push argument 0
+pop pointer 0
+push this 0
+return
+function HighScore.addPoints 0
+push argument 0
+pop pointer 0
+push this 0
+push argument 1
+add
+pop this 0
+push constant 0
+return
+function HighScore.updateHighScore 0
+push argument 0
+pop pointer 0
+push this 0
+push static 0
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push this 0
+pop static 0
+label IF_FALSE0
+push constant 0
+return
+function HighScore.resetCurrentScore 0
+push argument 0
+pop pointer 0
+push constant 0
+pop this 0
+push constant 0
+return
+function HighScore.displayScores 0
+push argument 0
+pop pointer 0
+push constant 12
+push constant 22
+call Output.moveCursor 2
+pop temp 0
+push constant 12
+call String.new 1
+push constant 89
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 117
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 83
+call String.appendChar 2
+push constant 99
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 58
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+call Output.printString 1
+pop temp 0
+push this 0
+call Output.printInt 1
+pop temp 0
+push constant 13
+push constant 22
+call Output.moveCursor 2
+pop temp 0
+push constant 12
+call String.new 1
+push constant 72
+call String.appendChar 2
+push constant 105
+call String.appendChar 2
+push constant 103
+call String.appendChar 2
+push constant 104
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 83
+call String.appendChar 2
+push constant 99
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 58
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+call Output.printString 1
+pop temp 0
+push static 0
+call Output.printInt 1
+pop temp 0
+push constant 0
+return
