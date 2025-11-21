@@ -1,0 +1,85 @@
+/**
+ * HighScore class - Manages game scoring system and high score tracking
+ * Maintains both current game score and all-time high score
+ */
+class HighScore {
+    static int highScore;     // Static field to persist high score across games
+    field int currentScore;   // Current game's score
+
+    /** 
+     * Static initializer - sets up persistent high score
+     * Called once when game first starts
+     */
+    function void init() {
+        let highScore = 0;  // Initialize high score to zero
+        return;
+    }
+    
+    /** 
+     * Constructor: Creates new score tracker for current game
+     */
+    constructor HighScore new() {
+        let currentScore = 0;  // Start with zero score
+        return this;
+    }
+    
+    /** 
+     * Returns the all-time high score
+     * Used for display and comparison
+     */
+    function int getHighScore() {
+        return highScore;
+    }
+    
+    /** 
+     * Returns current game's score
+     * Used for display and collision rewards
+     */
+    method int getCurrentScore() {
+        return currentScore;
+    }
+    
+    /** 
+     * Adds points to current score
+     * Called when player destroys enemies
+     * @param points Number of points to add
+     */
+    method void addPoints(int points) {
+        let currentScore = currentScore + points;
+        return;
+    }
+    
+    /** 
+     * Updates high score if current score is higher
+     * Called when game ends
+     */
+    method void updateHighScore() {
+        if (currentScore > highScore) {
+            let highScore = currentScore;
+        }
+        return;
+    }
+    
+    /** 
+     * Resets current score to zero
+     * Used when starting new game
+     */
+    method void resetCurrentScore() {
+        let currentScore = 0;
+        return;
+    }
+    
+    /** 
+     * Displays both current and high scores
+     * Called to update score display
+     */
+    method void displayScores() {
+        do Output.moveCursor(12, 22);
+        do Output.printString("Your Score: ");
+        do Output.printInt(currentScore);
+        do Output.moveCursor(13, 22);
+        do Output.printString("High Score: ");
+        do Output.printInt(highScore);
+        return;
+    }
+}

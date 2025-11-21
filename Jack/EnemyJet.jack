@@ -1,0 +1,218 @@
+/**
+ * EnemyJet class - Represents individual enemy aircraft in the game
+ * Handles enemy movement, collision detection, and screen boundaries
+ */
+class EnemyJet {
+    // Position and movement fields
+    field int x, y;              // Current position
+    field int prevX, prevY;      // Previous positions for smooth animation
+    field int xSpeed;            // Horizontal movement speed
+    field int ySpeed;            // Vertical movement speed (for gravity)
+    field boolean active;        // Whether enemy is currently active
+    field boolean fromTop;       // Spawn location flag affects gravity direction
+
+    // Screen boundary constants - shared across all enemies
+    static int topBound;        // Top screen limit (100)
+    static int bottomBound;     // Bottom screen limit (1900)
+    static int leftBound;       // Left screen limit (2)
+    static int rightBound;      // Right screen limit (510)
+
+    /** 
+     * Constructor: Creates a new enemy jet with specified parameters
+     * @param startX Initial X coordinate
+     * @param startY Initial Y coordinate
+     * @param horizontal Horizontal speed
+     * @param vertical Initial vertical speed
+     * @param isFromTop Whether enemy spawned from top (affects gravity)
+     */
+    constructor EnemyJet new(int startX, int startY, int horizontal, int vertical, boolean isFromTop) {
+        // Initialize screen boundaries if not already set
+        if (topBound = 0) {
+            let topBound = 100;     // Matches player's upper limit
+            let bottomBound = 1900;  // Matches player's lower limit
+            let leftBound = 2;       // Left screen edge with margin
+            let rightBound = 510;    // Right screen edge with margin
+        }
+
+        // Initialize position and movement
+        let x = startX;
+        let y = startY;
+        let prevX = startX;
+        let prevY = startY;
+        let xSpeed = horizontal;
+        let ySpeed = vertical;
+        let active = true;
+        let fromTop = isFromTop;
+        
+        do draw();  // Draw enemy at initial position
+        return this;
+    }
+
+    /** 
+     * Position getters - used for collision detection
+     */
+    method int getX() { return x; }
+    method int getY() { return y; }
+    
+    /** 
+     * Status check - used to manage active enemies
+     */
+    method boolean isActive() { return active; }
+    
+    /** 
+     * Deactivates enemy when hit or off-screen
+     * Ensures proper cleanup of sprite
+     */
+    method void deactivate() {
+        let active = false;
+        do erase();
+        return;
+    }
+
+    /** 
+     * Applies gravity effect based on spawn location
+     * Top-spawned enemies fall down, bottom-spawned enemies float up
+     */
+    method void applyGravity() {
+        if (fromTop) {
+            let ySpeed = ySpeed + 1;  // Increase downward speed
+            if (ySpeed > 4) {         // Limit falling speed
+                let ySpeed = 4;
+            }
+        }
+        else {
+            let ySpeed = ySpeed - 1;  // Increase upward speed
+            if (ySpeed < -4) {        // Limit rising speed
+                let ySpeed = -4;
+            }
+        }
+        return;
+    }
+
+    /** 
+     * Updates enemy position and handles screen boundaries
+     * Called every frame for active enemies
+     */
+    method void move() {
+        if (active) {
+            do erase();  // Clear previous position
+            
+            let prevX = x;  // Store current position
+            let prevY = y;
+            
+            let x = x - xSpeed;  // Move left (toward player)
+            let y = y + ySpeed;  // Apply vertical movement
+            
+            do applyGravity();  // Update vertical speed
+            
+            // Check screen boundaries and deactivate if out of bounds
+            if ((x < leftBound) | (x > rightBound) | (y < topBound) | (y > bottomBound) | 
+                ((y < 20) & (x < 100))) {  // Additional check for score display area
+                let active = false;
+                do erase();
+            } else {
+                if ((~(prevX = x)) | (~(prevY = y))) {
+                    do draw();  // Only redraw if position changed
+                }
+            }
+        }
+        return;
+    }
+
+    /** 
+     * Draws the enemy sprite at current position
+     * Uses memory mapping for efficient drawing
+     */
+    method void draw() {
+        var int position;
+        let position = 16384 + ((y / 8) * 32) + (x / 16);
+
+        // Draw enemy sprite pattern
+        do Memory.poke(position, 384);      // Top section
+        do Memory.poke(position + 32, 960); // Middle section
+        do Memory.poke(position + 64, 960); // Bottom section
+        do Memory.poke(position + 96, 384); // Tail section
+        
+        return;
+    }
+
+    /** 
+     * Erases enemy sprite from previous position
+     */
+    method void erase() {
+        var int position;
+        let position = 16384 + ((prevY / 8) * 32) + (prevX / 16);
+
+        // Clear sprite pattern
+        do Memory.poke(position, 0);
+        do Memory.poke(position + 32, 0);
+        do Memory.poke(position + 64, 0);
+        do Memory.poke(position + 96, 0);
+        do Memory.poke(position + 224, 0);
+        
+        return;
+    }
+
+    /** 
+     * Checks for collision with player jet
+     * Uses enlarged hitbox for better gameplay feel
+     * @param playerX Player's X coordinate
+     * @param playerY Player's Y coordinate
+     * @return True if collision detected
+     */
+    method boolean checkCollision(int playerX, int playerY) {
+        var int xDiff, yDiff;
+        
+        // Calculate absolute distances
+        if (x > playerX) { let xDiff = x - playerX; }
+        else { let xDiff = playerX - x; }
+        
+        if (y > playerY) { let yDiff = y - playerY; }
+        else { let yDiff = playerY - y; }
+        
+        // Check collision with increased hitbox (20x20)
+        if (xDiff < 20) {  // Enlarged from 16 to 20
+            if (yDiff < 20) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 
+     * Checks if bullet hits this enemy
+     * Uses larger hitbox than player collision
+     * @param bulletX Bullet's X coordinate
+     * @param bulletY Bullet's Y coordinate
+     * @return True if hit detected
+     */
+    method boolean checkBulletHit(int bulletX, int bulletY) {
+        var int xDiff, yDiff;
+        
+        if (~active) { return false; }
+        
+        // Calculate absolute distances
+        if (x > bulletX) { let xDiff = x - bulletX; }
+        else { let xDiff = bulletX - x; }
+        
+        if (y > bulletY) { let yDiff = y - bulletY; }
+        else { let yDiff = bulletY - y; }
+        
+        // Check hit with extra large hitbox (24x24)
+        if (xDiff < 24) {  // Larger than collision box for easier hits
+            if (yDiff < 24) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 
+     * Cleanup method - frees allocated memory
+     */
+    method void dispose() {
+        do erase();
+        do Memory.deAlloc(this);
+        return;
+    }
+}

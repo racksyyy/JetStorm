@@ -1,0 +1,87 @@
+/**
+ * Menu class - Handles the game's main menu interface
+ * Displays title, controls, and game instructions
+ */
+class Menu {
+    field int selection;  // Current menu selection (for future menu options)
+    
+    /** 
+     * Constructor: Creates new menu instance
+     * Initializes menu state
+     */
+    constructor Menu new() {
+        let selection = 0;  // Default selection
+        return this;
+    }
+    
+    /** 
+     * Displays the main menu screen
+     * Shows game title, controls, and instructions
+     */
+    method void show() {
+        // Clear screen for menu display
+        do Screen.clearScreen();
+        
+        // Draw game title
+        do Output.moveCursor(2, 25);
+        do Output.printString("JET-STORM");
+        
+        // Draw decorative border
+        do Screen.drawRectangle(100, 40, 400, 200);  // Outer border
+        do Screen.setColor(false);                    // Switch to white
+        do Screen.drawRectangle(102, 42, 398, 198);  // Inner border
+        do Screen.setColor(true);                     // Back to black
+        
+        // Display game controls section
+        do Output.moveCursor(6, 20);
+        do Output.printString("CONTROLS:");
+        
+        do Output.moveCursor(8, 16);
+        do Output.printString("W - Move Up");
+        
+        do Output.moveCursor(10, 16);
+        do Output.printString("SPACEBAR - Fire");
+        
+        do Output.moveCursor(12, 16);
+        do Output.printString("R - Restart (when game over)");
+        
+        // Display start instructions
+        do Output.moveCursor(15, 15);
+        do Output.printString("Press SPACEBAR to start the game");
+        
+        // Wait for player to start game
+        do waitForStart();
+        return;
+    }
+    
+    /** 
+     * Waits for player to press spacebar to start
+     * Includes key release detection to prevent immediate firing
+     */
+    method void waitForStart() {
+        var char key;
+        
+        while (true) {
+            let key = Keyboard.keyPressed();
+            
+            if (key = 32) {  // Spacebar pressed
+                // Wait for key release to prevent accidental firing
+                while (Keyboard.keyPressed() = 32) {
+                    do Sys.wait(10);  // Short delay
+                }
+                return;
+            }
+            
+            do Sys.wait(50);  // Reduce CPU usage while waiting
+        }
+        return;
+    }
+    
+    /** 
+     * Cleanup method - frees allocated memory
+     */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+}

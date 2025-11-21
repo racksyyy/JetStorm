@@ -1,0 +1,399 @@
+/**
+ * EnemyManager class - Manages all enemy jets in the game
+ * Controls enemy spawning, movement patterns, and collision detection
+ * Implements difficulty progression through spawn rate adjustments
+ */
+class EnemyManager {
+    // Core management fields
+    field Array enemies;          // Array of EnemyJet objects
+    field int maxEnemies;         // Maximum concurrent enemies
+    field int spawnCounter;       // Tracks frames between spawns
+    field int spawnRate;          // Current spawn interval (decreases over time)
+    field HighScore score;        // Reference to scoring system
+    field int prevScore;          // Previous score for display optimization
+    
+    // Random number generation
+    field int seed;               // Seed for spawn position randomization
+    
+    // Screen boundaries
+    field int screenWidth;        // Maximum horizontal boundary
+    field int screenHeight;       // Maximum vertical boundary
+    
+    // Spawn balance tracking
+    field int topSpawnCount;      // Number of enemies spawned from top
+    field int bottomSpawnCount;   // Number of enemies spawned from bottom
+
+    /** 
+     * Constructor: Sets up enemy management system
+     * @param max Maximum number of concurrent enemies
+     * @param scoreInstance Reference to game's score system
+     */
+    constructor EnemyManager new(int max, HighScore scoreInstance) {
+        var int i;
+        
+        let maxEnemies = max;
+        let enemies = Array.new(maxEnemies);
+        let score = scoreInstance;
+        
+        // Initialize enemy array to null
+        let i = 0;
+        while (i < maxEnemies) {
+            let enemies[i] = null;
+            let i = i + 1;
+        }
+        
+        // Initialize spawn control
+        let spawnCounter = 0;
+        let spawnRate = 100;    // Initial spawn every 100 frames
+        let prevScore = -1;     // Force first score display
+        let seed = 0;
+        
+        // Set screen boundaries
+        let screenWidth = 511;   // Full screen width
+        let screenHeight = 1925; // Maximum vertical range
+        
+        // Initialize spawn balance counters
+        let topSpawnCount = 0;
+        let bottomSpawnCount = 0;
+        
+        return this;
+    }
+
+    /** 
+     * Returns current game score
+     * Used for display and game progression
+     */
+    method int getScore() {
+        return score.getCurrentScore();
+    }
+
+    /** 
+     * Awards points for destroying enemies
+     * @param points Number of points to award
+     */
+    method void addScore(int points) {
+        do score.addPoints(points);
+        return;
+    }
+
+    /** 
+     * Updates all active enemies and manages spawning
+     * Called every frame to progress game state
+     */
+    method void update() {
+        var int i;
+        var EnemyJet enemy;
+        
+        // Increment spawn counter
+        let spawnCounter = spawnCounter + 1;
+        
+        // Check if it's time to spawn new enemy
+        if (spawnCounter > spawnRate) {
+            // Balance spawns between top and bottom
+            if (topSpawnCount < bottomSpawnCount) {
+                do spawnEnemyFromTop();	
+                let topSpawnCount = topSpawnCount + 1;
+            } else {
+                do spawnEnemyFromBottom();
+                let bottomSpawnCount = bottomSpawnCount + 1;
+            }
+            
+            let spawnCounter = 0;
+            
+            // Gradually increase difficulty by reducing spawn interval
+            if (spawnRate > 30) {
+                let spawnRate = spawnRate - 1;
+            }
+        }
+        
+        // Update all active enemies
+        let i = 0;
+        while (i < maxEnemies) {
+            let enemy = enemies[i];
+            if (~(enemy = null)) {
+                if (enemy.isActive()) {
+                    do enemy.move();
+                } 
+                else {
+                    // Clean up inactive enemies
+                    do enemy.dispose();
+                    let enemies[i] = null;
+                }
+            }
+            let i = i + 1;
+        }
+        
+        return;
+    }
+
+    /** 
+     * Spawns enemy at top of screen
+     * Creates downward-moving enemy pattern
+     */
+    method void spawnEnemyFromTop() {
+        var int i, x, y, xSpeed, ySpeed;
+        var EnemyJet enemy;
+        var boolean found;
+        
+        // Find empty slot for new enemy
+        let found = false;
+        let i = 0;
+        while ((i < maxEnemies) & (~found)) {
+            if (enemies[i] = null) {
+                let found = true;
+            }
+            else {
+                let i = i + 1;
+            }
+        }
+        
+        // Create enemy if slot found
+        if (found) {
+            let seed = seed + 373;  // Update randomization seed
+            
+            // Generate random horizontal position
+            let x = 50 + (MathLib.abs(seed) & 350);  // Range: 50-400
+            let y = 10;  // Start at top edge
+            
+            // Set movement speeds
+            let xSpeed = 1 + MathLib.random(5);  // Horizontal: 1-5
+            let ySpeed = MathLib.random(3);      // Initial downward speed
+            
+            // Create enemy with downward gravity
+            let enemy = EnemyJet.new(x, y, xSpeed, ySpeed, true);
+            let enemies[i] = enemy;
+        }
+        
+        return;
+    }
+
+    /** 
+     * Spawns enemy at bottom of screen
+     * Creates upward-moving enemy pattern
+     */
+    method void spawnEnemyFromBottom() {
+        var int i, x, y, xSpeed, ySpeed;
+        var EnemyJet enemy;
+        var boolean found;
+        
+        // Find empty slot
+        let found = false;
+        let i = 0;
+        while ((i < maxEnemies) & (~found)) {
+            if (enemies[i] = null) {
+                let found = true;
+            }
+            else {
+                let i = i + 1;
+            }
+        }
+        
+        if (found) {
+            let seed = seed + 937;  // Different seed for variation
+            
+            // Generate random position
+            let x = 50 + (MathLib.abs(seed) & 350);  // Range: 50-400
+            let y = 1900;  // Start at bottom
+            
+            // Set movement speeds
+            let xSpeed = 1 + MathLib.random(5);    // Horizontal: 1-5
+            let ySpeed = -MathLib.random(3);       // Initial upward speed
+            
+            // Create enemy with upward gravity
+            let enemy = EnemyJet.new(x, y, xSpeed, ySpeed, false);
+            let enemies[i] = enemy;
+        }
+        
+        return;
+    }
+
+    /** 
+     * Spawns enemy in middle area
+     * Creates varied vertical movement patterns
+     */
+    method void spawnEnemyMidArea() {
+        var int i, x, y, xSpeed, ySpeed;
+        var EnemyJet enemy;
+        var boolean found;
+        
+        // Find empty slot
+        let found = false;
+        let i = 0;
+        while ((i < maxEnemies) & (~found)) {
+            if (enemies[i] = null) {
+                let found = true;
+            }
+            else {
+                let i = i + 1;
+            }
+        }
+        
+        if (found) {
+            let seed = seed + 791;
+            
+            // Generate random mid-screen position
+            let y = 300 + MathLib.random(1000);  // Range: 300-1300
+            
+            // Set movement speeds
+            let xSpeed = 1 + MathLib.random(5);
+            let ySpeed = MathLib.random(3) - 1;  // -1 to 1 vertical movement
+            
+            // Random gravity direction
+            let found = ((seed & 1) = 0);  // 50% chance each direction
+            
+            let enemy = EnemyJet.new(screenWidth - 10, y, xSpeed, ySpeed, found);
+            let enemies[i] = enemy;
+        }
+        
+        return;
+    }
+
+    /** 
+     * Spawns enemy from right side of screen
+     * Creates horizontal attack pattern
+     */
+    method void spawnEnemy() {
+        var int i, y, xSpeed;
+        var EnemyJet enemy;
+        var boolean found;
+        
+        // Find empty slot
+        let found = false;
+        let i = 0;
+        while ((i < maxEnemies) & (~found)) {
+            if (enemies[i] = null) {
+                let found = true;
+            }
+            else {
+                let i = i + 1;
+            }
+        }
+        
+        if (found) {
+            let seed = seed + 781;
+            
+            // Random vertical position across screen
+            let y = 20 + MathLib.random(1880);  // Full range
+            
+            // Horizontal movement only
+            let xSpeed = 1 + MathLib.random(5);
+            
+            let enemy = EnemyJet.new(screenWidth - 10, y, xSpeed, 0, false);
+            let enemies[i] = enemy;
+        }
+        
+        return;
+    }
+
+    /** 
+     * Checks for collisions between enemies and player
+     * @param playerX Player's X coordinate
+     * @param playerY Player's Y coordinate
+     * @return True if collision detected
+     */
+    method boolean checkCollisionWithPlayer(int playerX, int playerY) {
+        var int i;
+        var EnemyJet enemy;
+        var boolean collision;
+        
+        let collision = false;
+        let i = 0;
+        
+        while ((i < maxEnemies) & (~collision)) {
+            let enemy = enemies[i];
+            if (~(enemy = null)) {
+                if (enemy.isActive()) {
+                    if (enemy.checkCollision(playerX, playerY)) {
+                        let collision = true;
+                    }
+                }
+            }
+            let i = i + 1;
+        }
+        
+        return collision;
+    }
+
+    /** 
+     * Checks for collisions between bullets and enemies
+     * Handles enemy destruction and score updates
+     * @param bullets BulletSet containing active bullets
+     */
+    method void checkBulletCollisions(BulletSet bullets) {
+        var int i, j;
+        var EnemyJet enemy;
+        var Array bulletPositions;
+        var int bulletX, bulletY;
+        var boolean bulletActive;
+        
+        let bulletPositions = bullets.getActiveBulletPositions();
+        
+        let i = 0;
+        while (i < maxEnemies) {
+            let enemy = enemies[i];
+            if (~(enemy = null)) {
+                if (enemy.isActive()) {
+                    let j = 0;
+                    while (j < 15) {  // Check each bullet (5 bullets * 3 values)
+                        let bulletActive = bulletPositions[j+2];
+                        
+                        if (bulletActive) {
+                            let bulletX = bulletPositions[j];
+                            let bulletY = bulletPositions[j+1];
+                            
+                            if (enemy.checkBulletHit(bulletX, bulletY)) {
+                                do enemy.deactivate();
+                                do bullets.deactivateBullet(j / 3);
+                                do addScore(10);
+                            }
+                        }
+                        
+                        let j = j + 3;
+                    }
+                }
+            }
+            let i = i + 1;
+        }
+        
+        do bulletPositions.dispose();
+        return;
+    }
+
+    /** 
+     * Updates score display if changed
+     * Optimizes by only updating when score changes
+     */
+    method void displayScore() {
+        var int currentScore;
+        let currentScore = score.getCurrentScore();
+        
+        if (~(currentScore = prevScore)) {
+            do Output.moveCursor(0, 0);
+            do Output.printString("Score: ");
+            do Output.printInt(currentScore);
+            let prevScore = currentScore;
+        }
+        return;
+    }
+
+    /** 
+     * Cleanup method - disposes all enemies and frees memory
+     */
+    method void dispose() {
+        var int i;
+        var EnemyJet enemy;
+        
+        let i = 0;
+        while (i < maxEnemies) {
+            let enemy = enemies[i];
+            if (~(enemy = null)) {
+                do enemy.dispose();
+            }
+            let i = i + 1;
+        }
+        
+        do enemies.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+}

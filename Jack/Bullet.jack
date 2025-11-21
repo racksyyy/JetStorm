@@ -1,0 +1,121 @@
+/**
+ * Bullet class - Represents projectiles fired by the player's jet
+ * Handles bullet movement, collision detection, and screen drawing
+ */
+class Bullet {
+    field int x, y;          // Current bullet position
+    field int prevX, prevY;  // Previous position for clean erasing
+    field boolean active;    // Whether bullet is currently in flight
+
+    /** 
+     * Constructor: Creates a new bullet at specified position
+     * Bullets start inactive until fired
+     * @param startX Initial X coordinate
+     * @param startY Initial Y coordinate
+     */
+    constructor Bullet new(int startX, int startY) {
+        let x = startX;      // Set initial position
+        let y = startY;
+        let prevX = startX;  // Track previous position
+        let prevY = startY;
+        let active = false;  // Start inactive
+        return this;
+    }
+
+    /** 
+     * Status check - used to manage active bullets
+     * @return True if bullet is currently in flight
+     */
+    method boolean isActive() {
+        return active;
+    }
+
+    /** 
+     * Position getters - used for collision detection
+     */
+    method int getX() { return x; }
+    method int getY() { return y; }
+
+    /** 
+     * Activates bullet at specified position (firing)
+     * @param newX Starting X position (usually player's position)
+     * @param newY Starting Y position
+     */
+    method void activate(int newX, int newY) {
+        // Clean up any previous active state
+        if (active) {
+            do erase();
+        }
+        
+        let x = newX + 16;   // Start in front of the jet
+        let y = newY;        // Match jet's vertical position
+        let prevX = x;       // Initialize previous position
+        let prevY = y;
+        let active = true;   // Mark as active
+        do draw();           // Draw at initial position
+        return;
+    }
+
+    /** 
+     * Updates bullet position
+     * Called every frame for active bullets
+     */
+    method void move() {
+        if (active) {
+            do erase();      // Clear previous position
+            
+            // Store previous position
+            let prevX = x;
+            let prevY = y;
+            
+            let x = x + 6;   // Move right at constant speed
+
+            // Deactivate if off screen
+            if (x > 510) {
+                let active = false;
+            } else {
+                do draw();   // Draw at new position
+            }
+        }
+        return;
+    }
+
+    /** 
+     * Draws the bullet sprite
+     * Uses 2x2 pixel pattern for better visibility
+     */
+    method void draw() {
+        var int position;
+        // Calculate screen memory position
+        let position = 16384 + ((y / 8) * 32) + (x / 16);
+
+        // Draw 2x2 pixel bullet pattern
+        do Memory.poke(position, 6);      // Top row pattern
+        do Memory.poke(position + 32, 6); // Bottom row pattern
+        return;
+    }
+
+    /** 
+     * Erases the bullet from its previous position
+     */
+    method void erase() {
+        var int position;
+        let position = 16384 + ((prevY / 8) * 32) + (prevX / 16);
+
+        // Clear bullet pattern
+        do Memory.poke(position, 0);
+        do Memory.poke(position + 32, 0);
+        return;
+    }
+
+    /** 
+     * Cleanup method - removes bullet and frees memory
+     */
+    method void dispose() {
+        if (active) {
+            do erase();     // Only erase if active
+            let active = false;
+        }
+        return;
+    }
+}

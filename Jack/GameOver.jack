@@ -1,0 +1,65 @@
+/**
+ * GameOver class - Handles game over screen and end-game state
+ * Displays final scores and restart instructions
+ */
+class GameOver {
+    field HighScore score;  // Reference to scoring system
+    
+    /** 
+     * Constructor: Creates game over screen handler
+     * @param scoreSystem Reference to game's score tracking system
+     */
+    constructor GameOver new(HighScore scoreSystem) {
+        let score = scoreSystem;  // Store score reference
+        return this;
+    }
+
+    /** 
+     * Displays the game over screen
+     * Shows decorative border, final scores, and restart option
+     */
+    method void show() {
+        do Screen.clearScreen();
+        
+        // Draw thick border - top horizontal lines
+        do Screen.drawLine(5, 5, 506, 5);
+        do Screen.drawLine(5, 6, 506, 6);
+        do Screen.drawLine(5, 7, 506, 7);
+
+        // Draw thick border - bottom horizontal lines
+        do Screen.drawLine(5, 248, 506, 248);
+        do Screen.drawLine(5, 249, 506, 249);
+        do Screen.drawLine(5, 250, 506, 250);
+
+        // Draw thick border - left vertical lines
+        do Screen.drawLine(5, 5, 5, 250);
+        do Screen.drawLine(6, 5, 6, 250);
+        do Screen.drawLine(7, 5, 7, 250);
+
+        // Draw thick border - right vertical lines
+        do Screen.drawLine(504, 5, 504, 250);
+        do Screen.drawLine(505, 5, 505, 250);
+        do Screen.drawLine(506, 5, 506, 250);
+        
+        // Display final scores
+        do score.displayScores();
+        
+        // Show game over message
+        do Output.moveCursor(10, 22);
+        do Output.printString("=== GAME OVER ===");
+        
+        // Show restart instructions
+        do Output.moveCursor(15, 22);
+        do Output.printString("Press R to Restart");
+        return;
+    }
+
+    /** 
+     * Cleanup method - frees allocated memory
+     */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+}
+

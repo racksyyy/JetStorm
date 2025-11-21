@@ -1,0 +1,28 @@
+/** 
+ * Main class - Entry point for the Jet-Storm game
+ * This class initializes and manages the main game instance
+ */
+class Main {
+    /** 
+     * The main entry point of the game
+     * Creates a new game instance, runs it, and handles cleanup
+     * The game flow is:
+     * 1. Initialize high score system
+     * 2. Create new game instance
+     * 3. Run the game loop
+     * 4. Clean up resources when game ends
+     */
+    function void main() {
+        var Game game;  // Game instance that manages the entire gameplay
+        
+        // Initialize the persistent high score tracking system
+        do HighScore.init();
+        
+        // Create and start a new game instance
+        let game = Game.new();  // Instantiate the game with default settings
+        do game.run();          // Start the main game loop
+        do game.dispose();      // Clean up resources when game ends
+        return;
+    }
+}
+

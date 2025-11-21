@@ -1,0 +1,190 @@
+/**
+ * PlayersJet class - Represents the player-controlled jet in the game
+ * Handles movement, physics, drawing, and player state management
+ */
+class PlayersJet {
+    field int x, y;        // Current position coordinates
+    field int velocity;    // Current vertical velocity (affected by gravity)
+    field int prevY;       // Previous Y position for redraw optimization
+    field int lives;       // Number of remaining lives
+
+    /** 
+     * Constructor: Creates a new player jet at specified position
+     * @param startX Initial X coordinate
+     * @param startY Initial Y coordinate
+     */
+    constructor PlayersJet new(int startX, int startY) {
+        let x = startX;      // Set horizontal position
+        let y = startY;      // Set vertical position
+        let prevY = startY;  // Track previous position for redraw optimization
+        let velocity = 0;    // Start with no vertical movement
+        let lives = 3;       // Player starts with 3 lives
+        return this;
+    }
+
+    /** 
+     * Position and state getters
+     * Used by other game components for collision detection and UI
+     */
+    method int getX() { return x; }
+    method int getY() { return y; }
+    method int getLives() { return lives; }
+
+    /** 
+     * Decrements player lives when hit by enemy or falling off screen
+     */
+    method void loseLife() {
+        let lives = lives - 1;
+        return;
+    }
+
+    /** 
+     * Checks if player has any lives remaining
+     * @return True if player has lives left, false if game over
+     */
+    method boolean isAlive() {
+        return lives > 0;
+    }
+
+    /** 
+     * Cleanup method - removes jet from screen and frees memory
+     */
+    method void dispose() {
+        do erase();  // Clear jet sprite from screen
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** 
+     * Draws the jet sprite at its current position
+     * Uses direct memory access for efficient screen drawing
+     */
+    method void draw() {
+        var int position;
+        // Calculate screen memory address for jet sprite
+        let position = 16384 + ((y / 8) * 32) + (x / 16);
+
+        // Draw the jet sprite using bit patterns
+        // Each line represents a row of the jet's sprite
+        do Memory.poke(position, 24577);      // Top row
+        do Memory.poke(position +32, 24579);  // Second row
+        do Memory.poke(position +64, 28679);  // Third row
+        do Memory.poke(position +96, 30735);  // Fourth row
+        do Memory.poke(position +128, -1);    // Middle rows (solid)
+        do Memory.poke(position +160, -1);
+        do Memory.poke(position +192, -1);	
+        do Memory.poke(position +224, -1);
+        do Memory.poke(position +256, 16128); // Bottom rows (tapered)
+        do Memory.poke(position +288, 8064);
+        do Memory.poke(position +320, 4032);
+        do Memory.poke(position +352, 8160);
+        // Draw additional details
+        do Memory.poke(position +65, 96);     // Right side details
+        do Memory.poke(position +97, 96);
+        do Memory.poke(position +129, 1023);
+        do Memory.poke(position +161, 1279);
+        do Memory.poke(position +193, 3327);
+        do Memory.poke(position +225, 4095);
+        do Memory.poke(position +257, 31);
+        do Memory.poke(position +289, 3);
+        return;
+    }
+
+    /** 
+     * Erases the jet's previous position from the screen
+     * Called before redrawing at new position to prevent ghosting
+     */
+    method void erase() {
+        var int position;
+        // Calculate previous screen position
+        let position = 16384 + ((prevY / 8) * 32) + (x / 16);
+        
+        // Clear all pixels used by jet sprite
+        do Memory.poke(position, 0);
+        do Memory.poke(position +32, 0);
+        do Memory.poke(position +64, 0);
+        do Memory.poke(position +96, 0);
+        do Memory.poke(position +128, 0);
+        do Memory.poke(position +160, 0);
+        do Memory.poke(position +192, 0);
+        do Memory.poke(position +224, 0);
+        do Memory.poke(position +256, 0);
+        do Memory.poke(position +288, 0);
+        do Memory.poke(position +320, 0);
+        do Memory.poke(position +352, 0);
+        do Memory.poke(position +65, 0);
+        do Memory.poke(position +97, 0);
+        do Memory.poke(position +129, 0);
+        do Memory.poke(position +161, 0);
+        do Memory.poke(position +193, 0);
+        do Memory.poke(position +225, 0);
+        do Memory.poke(position +257, 0);
+        do Memory.poke(position +289, 0);
+        return;
+    }
+
+    /** 
+     * Handles upward movement when player presses 'W'
+     * Applies immediate upward velocity and updates position
+     */
+    method void moveUp() {
+        // Only redraw if velocity would change
+        if (~(velocity = -15)) { 
+            do erase();  // Clear previous position
+        }
+
+        let velocity = -15;  // Set upward velocity
+        let prevY = y;      // Store current position
+        
+        // Prevent moving above screen bounds
+        if ((y + velocity) < 10) {
+            let y = 10;
+        } 
+        else {
+            let y = y + velocity;
+        }
+
+        // Only redraw if position changed
+        if (~(prevY = y)) {
+            do draw();
+        }
+        return;
+    }
+
+    /** 
+     * Applies gravity effect when player is not moving up
+     * Creates natural falling motion
+     */
+    method void applyGravity() {
+        var int newVelocity;
+        
+        let newVelocity = velocity + 3;  // Accelerate downward
+        
+        // Only update if velocity would change
+        if (~(newVelocity = velocity)) {
+            do erase();
+        }
+
+        let velocity = newVelocity;
+        
+        // Limit maximum falling speed
+        if (velocity > 15) {
+            let velocity = 15;
+        }
+
+        let prevY = y;  // Store current position
+        let y = y + velocity;  // Apply velocity
+
+        // Prevent falling below screen bounds
+        if (y > 1900) {
+            let y = 1900;
+            let velocity = 0;
+        }
+
+        // Only redraw if position changed
+        if (~(prevY = y)) {
+            do draw();
+        }
+        return;
+    }
+}

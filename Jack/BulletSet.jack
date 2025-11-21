@@ -1,0 +1,160 @@
+/**
+ * BulletSet class - Manages a collection of player-fired bullets
+ * Handles bullet pooling, firing mechanics, and bullet lifecycle
+ */
+class BulletSet {
+    field Array bullets;       // Array of Bullet objects (bullet pool)
+    field int maxBullets;     // Maximum number of active bullets allowed
+    field int activeBullets;  // Current count of active bullets
+
+    /** 
+     * Constructor: Initializes bullet pool system
+     * Creates a fixed pool of reusable bullet objects
+     */
+    constructor BulletSet new() {
+        var int i;
+        let maxBullets = 5;   // Limit bullets for performance
+        let activeBullets = 0;
+        
+        // Initialize bullet pool
+        let bullets = Array.new(maxBullets);
+        
+        // Create all bullet objects up front
+        let i = 0;
+        while (i < maxBullets) {
+            let bullets[i] = Bullet.new(0, 0);
+            let i = i + 1;
+        }
+        
+        return this;
+    }
+
+    /** 
+     * Attempts to fire a bullet from specified position
+     * Uses bullet pooling to reuse inactive bullets
+     * @param x Starting X coordinate
+     * @param y Starting Y coordinate
+     */
+    method void fire(int x, int y) {
+        var int i;
+        var Bullet bullet;
+        var boolean fired;
+        
+        // Only allow firing if under bullet limit
+        if (activeBullets < maxBullets) {
+            let fired = false;
+            let i = 0;
+            
+            // Find an inactive bullet to reuse
+            while ((i < maxBullets) & (~fired)) {
+                let bullet = bullets[i];
+                
+                if (~(bullet.isActive())) {
+                    do bullet.activate(x, y);
+                    let fired = true;
+                    let activeBullets = activeBullets + 1;
+                }
+                
+                let i = i + 1;
+            }
+        }
+        
+        return;
+    }
+
+    /** 
+     * Updates all active bullets' positions
+     * Called every frame to move bullets
+     */
+    method void move() {
+        var int i;
+        var Bullet bullet;
+        
+        let i = 0;
+        while (i < maxBullets) {
+            let bullet = bullets[i];
+            
+            // Track bullets that become inactive
+            if (bullet.isActive()) {
+                do bullet.move();
+                
+                if (~(bullet.isActive())) {
+                    let activeBullets = activeBullets - 1;
+                }
+            }
+            
+            let i = i + 1;
+        }
+        
+        return;
+    }
+
+    /** 
+     * Deactivates a specific bullet (used when hitting enemy)
+     * @param index The index of the bullet to deactivate
+     */
+    method void deactivateBullet(int index) {
+        var Bullet bullet;
+        
+        if ((index > -1) & (index < maxBullets)) {
+            let bullet = bullets[index];
+            
+            if (bullet.isActive()) {
+                do bullet.dispose();
+                let activeBullets = activeBullets - 1;
+            }
+        }
+        
+        return;
+    }
+
+    /** 
+     * Returns array of active bullet positions
+     * Used for collision detection with enemies
+     * @return Array containing [x, y, active] for each bullet
+     */
+    method Array getActiveBulletPositions() {
+        var Array positions;
+        var int i, posIndex;
+        var Bullet bullet;
+        
+        // Allocate array for bullet data
+        let positions = Array.new(maxBullets * 3);
+        let posIndex = 0;
+        
+        let i = 0;
+        while (i < maxBullets) {
+            let bullet = bullets[i];
+            
+            // Store position and status for each bullet
+            let positions[posIndex] = bullet.getX();
+            let positions[posIndex + 1] = bullet.getY();
+            let positions[posIndex + 2] = bullet.isActive();
+            
+            let posIndex = posIndex + 3;
+            let i = i + 1;
+        }
+        
+        return positions;
+    }
+
+    /** 
+     * Cleanup method - disposes all bullets and frees memory
+     */
+    method void dispose() {
+        var int i;
+        var Bullet bullet;
+        
+        let i = 0;
+        while (i < maxBullets) {
+            let bullet = bullets[i];
+            do bullet.dispose();
+            do Memory.deAlloc(bullet);
+            let i = i + 1;
+        }
+        
+        do bullets.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+}

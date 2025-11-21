@@ -1,0 +1,85 @@
+/**
+ * MathLib class - Mathematical utility functions for the game
+ * Provides random number generation and basic math operations
+ * Used primarily for enemy spawning and movement patterns
+ */
+class MathLib {
+    static int seed;  // Pseudo-random number generator seed
+
+    /** 
+     * Initializes the random number generator
+     * Uses a fixed seed for reproducible behavior
+     */
+    function void init() {
+        let seed = 12345;  // Initial seed value
+        return;
+    }
+
+    /** 
+     * Generates a pseudo-random number using Linear Congruential Generator
+     * Formula: seed = (seed * a + c) mod m
+     * Uses carefully chosen constants for good distribution
+     * @param max Upper bound for random number (exclusive)
+     * @return Random number between 0 and max-1
+     */
+    function int random(int max) {
+        // Linear Congruential Generator parameters
+        let seed = seed + 25173;    // Add constant
+        let seed = seed * 13849;    // Multiply by prime
+        
+        // Handle overflow and ensure positive values
+        if (seed < 0) {
+            let seed = seed + 32767;  // Add large prime if negative
+        }
+        
+        if (seed < 0) {
+            let seed = MathLib.abs(seed);  // Ensure positive
+        }
+        
+        // Use bitwise AND for efficient modulo-like operation
+        return seed & (max - 1);
+    }
+
+    /** 
+     * Returns the smaller of two numbers
+     * @param a First number to compare
+     * @param b Second number to compare
+     * @return The minimum value between a and b
+     */
+    function int min(int a, int b) {
+        if (a < b) {
+            return a;
+        }
+        else {
+            return b;
+        }
+    }
+    
+    /** 
+     * Returns the larger of two numbers
+     * @param a First number to compare
+     * @param b Second number to compare
+     * @return The maximum value between a and b
+     */
+    function int max(int a, int b) {
+        if (a > b) {
+            return a;
+        }
+        else {
+            return b;
+        }
+    }
+
+    /** 
+     * Returns the absolute value of a number
+     * Used for both random number generation and game calculations
+     * @param x Number to get absolute value of
+     * @return Absolute (positive) value of x
+     */
+    function int abs(int x) {
+        if (x < 0) {
+            return -x;
+        }
+        return x;
+    }
+}
